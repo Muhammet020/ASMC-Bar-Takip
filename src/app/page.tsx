@@ -1,65 +1,95 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import { supabase } from '@/lib/supabase';
+import Header from '@/components/Header';
+import BottomMenu from '@/components/BottomMenu';
+
+const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), {
+  ssr: false,
+  loading: () => <p className="text-center text-slate-500 py-6 text-sm font-mono animate-pulse">Kamera hazırlanıyor...</p>
+});
+
+interface Urun {
+  id: number;
+  urun_adi: string;
+  mevcut_stok: number;
+  satis_fiyati: number;
+  dolaplar: { dolap_adi: string } | null;
+}
 
 export default function Home() {
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [urunler, setUrunler] = useState<Urun[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function stoklariGetir() {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('urunler')
+        .select(`
+          id, urun_adi, mevcut_stok, satis_fiyati,
+          dolaplar ( dolap_adi )
+        `);
+      
+      if (data && !error) setUrunler(data as unknown as Urun[]);
+      setLoading(false);
+    }
+    stoklariGetir();
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between font-sans">
+      <div>
+        <Header />
+        
+        <main className="max-w-md mx-auto p-4 flex flex-col gap-6">
+          
+          {isScannerOpen ? (
+            <BarcodeScanner 
+              onScanSuccess={(b) => { console.log(b); setIsScannerOpen(false); }} 
+              onClose={() => setIsScannerOpen(false)} 
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+          ) : (
+            <button
+              onClick={() => setIsScannerOpen(true)}
+              className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-extrabold py-5 rounded-2xl text-lg shadow-xl shadow-cyan-500/5 active:scale-[0.99] transition-all"
+            >
+              ║▌║ BARKOD TARAT
+            </button>
+          )}
+
+          <div>
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">
+              📦 GÜNCEL STOK LİSTESİ
+            </h2>
+            
+            {loading ? (
+              <p className="text-center text-slate-600 text-sm py-10">Stoklar yükleniyor...</p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {urunler.map((urun) => (
+                  <div key={urun.id} className="bg-slate-900 border border-slate-850 p-4 rounded-2xl flex justify-between items-center">
+                    <div>
+                      <h3 className="font-semibold text-sm">{urun.urun_adi}</h3>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase mt-0.5">
+                        📍 {urun.dolaplar?.dolap_adi || 'Bilinmiyor'}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="block font-mono font-bold text-cyan-400">{urun.mevcut_stok} Adet</span>
+                      <span className="text-xs text-slate-400">₺{urun.satis_fiyati}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+      <BottomMenu />
     </div>
   );
 }
