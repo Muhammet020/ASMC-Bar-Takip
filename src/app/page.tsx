@@ -33,7 +33,7 @@ export default function Home() {
           id, urun_adi, mevcut_stok, satis_fiyati,
           dolaplar ( dolap_adi )
         `);
-      
+
       if (data && !error) setUrunler(data as unknown as Urun[]);
       setLoading(false);
     }
@@ -44,13 +44,13 @@ export default function Home() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between font-sans">
       <div>
         <Header />
-        
+
         <main className="max-w-md mx-auto p-4 flex flex-col gap-6">
-          
+
           {isScannerOpen ? (
-            <BarcodeScanner 
-              onScanSuccess={(b) => { console.log(b); setIsScannerOpen(false); }} 
-              onClose={() => setIsScannerOpen(false)} 
+            <BarcodeScanner
+              onScanSuccess={(b) => { console.log(b); setIsScannerOpen(false); }}
+              onClose={() => setIsScannerOpen(false)}
             />
           ) : (
             <button
@@ -65,7 +65,7 @@ export default function Home() {
             <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">
               📦 GÜNCEL STOK LİSTESİ
             </h2>
-            
+
             {loading ? (
               <p className="text-center text-slate-600 text-sm py-10">Stoklar yükleniyor...</p>
             ) : (
