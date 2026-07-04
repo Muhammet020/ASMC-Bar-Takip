@@ -1,11 +1,14 @@
 'use client';
+export const dynamic = 'force-dynamic'; // Bu satır sayfanın sadece canlıda çalışmasını zorunlu kılar
+
+import { getSupabaseClient } from '@/lib/supabase';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import BottomMenu from '@/components/BottomMenu';
 
 
 export default function AdisyonListePage() {
+  const supabase = getSupabaseClient();
   const [adisyonlar, setAdisyonlar] = useState<any[]>([]);
   const [filtre, setFiltre] = useState<'acik' | 'odendi' | 'borclu'>('acik');
 
